@@ -18,7 +18,7 @@ _SRCS=download_funcs.c main.c
 DEPS=$(patsubst %,$(SRCDIR)/%,$(_DEPS))
 OBJS=$(patsubst %,$(OBJDIR)/%,$(_OBJS))
 
-rem: $(OBJS)
+remcurl: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 $(OBJDIR):
@@ -30,4 +30,4 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c $(DEPS)
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)/*.o
-	rm -f rem
+	rm -f remcurl
