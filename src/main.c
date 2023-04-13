@@ -86,7 +86,9 @@ cJSON *get_json_from_filename(char *dir_id, char *find_name) {
     return NULL;
   }
 
-  return find_name_in_directory(json, find_name);
+  cJSON *result = find_name_in_directory(json, find_name);
+  cJSON_Delete(json);
+  return result;
 }
 
 int split_path(char *str, struct splitstr *dest) {
@@ -256,7 +258,9 @@ cleanup:
 int print_json_from_path(char *path) {
   cJSON *json = get_json_from_path(path);
   if (!json) return 1;
-  printf("%s\n", cJSON_Print(json));
+  char *json_str = cJSON_Print(json);
+  printf("%s\n", json_str);
+  free(json_str);
   cJSON_Delete(json);
   return 0;
 }
