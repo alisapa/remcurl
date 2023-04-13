@@ -9,32 +9,22 @@
 #include <curl/curl.h>
 #include <cjson/cJSON.h>
 
-#define STREQ(arg,str) (strncmp(arg, str, strlen(str) + 1) == 0)
-#define REM_URL "http://10.11.99.1"
-#define ID_LENGTH 50
+#include "download_funcs.h"
 
-const char *list_url       = "%s/documents/%s";
-const char *get_url        = "%s/download/%s/placeholder";
+#define STREQ(arg,str) (strncmp(arg, str, strlen(str) + 1) == 0)
+
 // Not a typo! Or rather, the Remarkable developers' typo...
 const char *name_attr      = "VissibleName";
 const char *id_attr        = "ID";
 const char *type_attr      = "Type";
 
-struct buffer {
-  char *ptr;
-  size_t size;
-};
 // Two zero-terminated strings in the same buffer
 struct splitstr {
   char *str;
   char *str2; // Pointing to the same malloc() as str
 };
-static struct buffer recvbuf;
-static CURL *handle = NULL;
-
-size_t write_to_mem(void *contents, size_t size, size_t nmemb, void *userp);
-size_t write_to_file(void *contents, size_t size, size_t nmemb, void *userp);
-char *url_from_id(const char *pattern, char *id);
+struct buffer recvbuf = { 0 };
+CURL *handle = NULL;
 
 void ZERO_OR_DIE(int ret, char *msg) {
   if (ret != 0) {
@@ -66,27 +56,6 @@ int is_directory(cJSON *item) {
   return strcmp(type, "CollectionType") == 0;
 }
 
-cJSON *get_request_json(char *url) {
-  curl_easy_setopt(handle, CURLOPT_HTTPGET, 1L);
-  curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void *)&recvbuf);
-  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_to_mem);
-  curl_easy_setopt(handle, CURLOPT_URL, url);
-  recvbuf.size = 0; // Reset receiving buffer
-  CURLcode res = curl_easy_perform(handle);
-  if (res != CURLE_OK) {
-    fprintf(stderr, "curl_easy_perform() failed: %s\n",
-        curl_easy_strerror(res));
-    return NULL;
-  }
-  
-  cJSON *json = cJSON_ParseWithLength(recvbuf.ptr, recvbuf.size);
-  if (!json) {
-    fprintf(stderr, "Missing or malformed JSON.\n");
-    return NULL;
-  }
-  return json;
-}
-
 cJSON *find_name_in_directory(cJSON *dir_json, char *find_name) {
   for (cJSON *item = dir_json->child; item; item = item->next) {
     char *name = get_string_attr(item, name_attr);
@@ -108,7 +77,7 @@ cJSON *get_json_from_filename(char *dir_id, char *find_name) {
   char *id;
 
   char *url = url_from_id(list_url, dir_id);
-  json = get_request_json(url);
+  json = get_request_json(handle, &recvbuf, url);
   free(url);
   if (!json) return NULL;
   if (!json->child) {
@@ -152,7 +121,8 @@ cJSON *get_json_from_path(char *pth) {
 
   // Get root path
   // TODO: Make IP adjustable at compile time
-  cJSON *json = get_request_json("http://10.11.99.1/documents/");
+  cJSON *json = get_request_json(handle, &recvbuf,
+      "http://10.11.99.1/documents/");
   cJSON *new_json = json;
   if (!json) {
     fprintf(stderr, "Failed to alloc memory.\n");
@@ -189,34 +159,6 @@ cJSON *get_json_from_path(char *pth) {
   return new_json;
 }
 
-size_t write_to_mem(void *contents, size_t size, size_t nmemb, void *userp) {
-  size_t real_size = size * nmemb;
-  struct buffer *buf = (struct buffer *)userp;
-  char *ptr = realloc(buf->ptr, buf->size + real_size + 1);
-  if (!ptr) {
-    fprintf(stderr, "Failed to alloc memory for received data\n");
-    return 0;
-  }
-  buf->ptr = ptr;
-  memcpy(buf->ptr + buf->size, contents, real_size);
-  buf->size += real_size;
-  buf->ptr[buf->size] = 0; // Null-terminate the string
-  return real_size;
-}
-
-size_t write_to_file(void *contents, size_t size, size_t nmemb, void *userp) {
-  return fwrite(contents, size, nmemb, (FILE *)userp);
-}
-
-char *url_from_id(const char *pattern, char *id) {
-  int strsiz = strlen(REM_URL) + strlen(list_url) + ID_LENGTH + 3;
-  char *str = malloc(strsiz);
-  if (!str) return NULL;
-
-  snprintf(str, strsiz, pattern, REM_URL, id ? id : "");
-  return str;
-}
-
 int list_path(char *path) {
   char *url = NULL;
   cJSON *list_json = NULL; // Information about the contents of the directory
@@ -229,7 +171,7 @@ int list_path(char *path) {
   }
 
   url = url_from_id(list_url, get_string_attr(dir_json, id_attr));
-  list_json = get_request_json(url);
+  list_json = get_request_json(handle, &recvbuf, url);
   free(url);
   if (!list_json) goto cleanup;
 
@@ -249,44 +191,6 @@ cleanup:
   return 1;
 }
 
-int download_file(char *file_id, char *out_base) {
-  char *url = NULL;
-  FILE *fp = NULL;
-
-  url = url_from_id(get_url, file_id);
-  if (!url) {
-    fprintf(stderr, "Failed to allocate memory.\n");
-    return 1;
-  }
-
-  char out_name[strlen(out_base) + 4];
-  sprintf(out_name, "%s.pdf", out_base);
-  fp = fopen(out_name, "w");
-  if (!fp) {
-    fprintf(stderr, "Failed to open for writing: %s\n", out_name);
-    goto cleanup;
-  }
-
-  curl_easy_setopt(handle, CURLOPT_HTTPGET, 1L);
-  curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void *)fp);
-  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_to_file);
-  curl_easy_setopt(handle, CURLOPT_URL, url);
-  CURLcode res = curl_easy_perform(handle);
-  if (res != CURLE_OK) {
-    fprintf(stderr, "curl_easy_perform() failed: %s\n",
-        curl_easy_strerror(res));
-    goto cleanup;
-  }
-  fclose(fp);
-  free(url);
-  return 0;
-
-cleanup:
-  if (fp) fclose(fp);
-  if (url) free(url);
-  return 1;
-}
-
 int recursive_download(cJSON *start_json) {
   char *dir_name = get_string_attr(start_json, name_attr);
   dir_name = dir_name ? dir_name : "fs_root";
@@ -303,7 +207,7 @@ int recursive_download(cJSON *start_json) {
   start_id = start_id ? start_id : "";
   char *url = url_from_id(list_url, start_id);
   if (!url) return 1;
-  cJSON *json = get_request_json(url);
+  cJSON *json = get_request_json(handle, &recvbuf, url);
   free(url);
   if (!json) return 1;
 
@@ -314,7 +218,7 @@ int recursive_download(cJSON *start_json) {
       continue;
     }
     printf("Saving file: %s\n", get_string_attr(item, name_attr));
-    download_file(get_string_attr(item, id_attr),
+    download_file(handle, get_string_attr(item, id_attr),
                   get_string_attr(item, name_attr));
   }
   cJSON_Delete(json);
@@ -338,7 +242,7 @@ int save_file_from_path(char *path) {
     if (recursive_download(file_info))
       goto cleanup;
   } else {
-    if (download_file(get_string_attr(file_info, id_attr),
+    if (download_file(handle, get_string_attr(file_info, id_attr),
           get_string_attr(file_info, name_attr)))
       goto cleanup;
   }
@@ -358,7 +262,6 @@ int print_json_from_path(char *path) {
 }
 
 int main(int argc, char **argv) {
-  cJSON *json  = NULL;
   CURLcode res;
   int ret = 0;
 
@@ -384,7 +287,6 @@ int main(int argc, char **argv) {
   }
 
 cleanup:
-  if (json) cJSON_Delete(json);
   free(recvbuf.ptr);
   curl_easy_cleanup(handle);
   curl_global_cleanup();
