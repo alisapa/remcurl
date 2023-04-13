@@ -26,6 +26,11 @@ size_t write_to_file(void *contents, size_t size, size_t nmemb, void *userp) {
   return fwrite(contents, size, nmemb, (FILE *)userp);
 }
 
+size_t write_discard(void *contents, size_t size, size_t nmemb, void *userp) {
+  return size * nmemb; // Pretend we have successfully written it, while
+                       // discarding all of the data
+}
+
 char *url_from_id(const char *pattern, char *id) {
   int strsiz = strlen(rem_addr) + strlen(list_url) + ID_LENGTH + 3;
   char *str = malloc(strsiz);
@@ -92,4 +97,44 @@ cleanup:
   if (fp) fclose(fp);
   if (url) free(url);
   return 1;
+}
+
+int upload_file(CURL *handle, char *path) {
+  CURLcode res;
+  curl_mime *form = NULL;
+  curl_mimepart *field = NULL;
+  struct curl_slist *headerlist = NULL;
+  const char *buf = "Expect:";
+
+  char url[strlen(rem_addr) + strlen(put_url) + 1];
+  sprintf(url, put_url, rem_addr);
+
+  form = curl_mime_init(handle);
+  field = curl_mime_addpart(form);
+  curl_mime_name(field, "file");
+  curl_mime_filedata(field, path);
+
+  headerlist = curl_slist_append(headerlist, buf);
+  curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headerlist);
+  curl_easy_setopt(handle, CURLOPT_MIMEPOST, form);
+  curl_easy_setopt(handle, CURLOPT_URL, url);
+
+  // Don't print response such as:
+  //   {"status":"Upload successful"}
+  //
+  // TODO: Should use response for error-checking instead?
+  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_discard);
+
+  res = curl_easy_perform(handle);
+  if (res != CURLE_OK) {
+    fprintf(stderr, "curl_easy_perform() failed: %s\n",
+        curl_easy_strerror(res));
+    curl_mime_free(form);
+    curl_slist_free_all(headerlist);
+    return 1;
+  }
+
+  curl_mime_free(form);
+  curl_slist_free_all(headerlist);
+  return 0;
 }

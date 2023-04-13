@@ -278,12 +278,21 @@ int main(int argc, char **argv) {
       goto cleanup;
     }
     ret = save_file_from_path(argv[2]);
+  } else if (STREQ(argv[1], "put")) {
+    if (argc < 3) {
+      fprintf(stderr, "Missing file path.\n");
+      goto cleanup;
+    }
+    ret = upload_file(handle, argv[2]);
   } else if (STREQ(argv[1], "json")) {
     if (argc < 3) {
       fprintf(stderr, "Missing file path.\n");
       goto cleanup;
     }
     ret = print_json_from_path(argv[2]);
+  } else {
+    fprintf(stderr, "Unrecognized action: %s\n", argv[1]);
+    ret = 1;
   }
 
 cleanup:
