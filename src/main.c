@@ -13,6 +13,20 @@
 
 #define STREQ(arg,str) (strncmp(arg, str, strlen(str) + 1) == 0)
 
+const char *usage = \
+"Usage: %1$s <action> [parameter]\n"
+"%1$s ls [remarkable_path]\n"
+"\tList directory. Leave path empty to list root directory.\n"
+"%1$s json <remarkable_path>\n"
+"\tFetch and print the JSON information about a particular file.\n"
+"%1$s get <remarkable_path>\n"
+"\tDownload files from directory. Pass \"\" to download entire file tree.\n"
+"\tIn that case, all files will be downloaded into a directory \"fs_root\".\n"
+"%1$s put <local_path>\n"
+"\tUpload a file to the ReMarkable.\n"
+"%1$s help\n"
+"\tPrint this help message.\n";
+
 // Not a typo! Or rather, the Remarkable developers' typo...
 const char *name_attr      = "VissibleName";
 const char *id_attr        = "ID";
@@ -294,8 +308,12 @@ int main(int argc, char **argv) {
       goto cleanup;
     }
     ret = print_json_from_path(argv[2]);
+  } else if (STREQ(argv[1], "help")) {
+    printf(usage, argv[0]);
+    ret = 0;
   } else {
     fprintf(stderr, "Unrecognized action: %s\n", argv[1]);
+    printf(usage, argv[0]);
     ret = 1;
   }
 
