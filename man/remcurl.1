@@ -1,7 +1,7 @@
 .TH REMCURL 1 2023-04-14
 
 .SH NAME
-remcurl \- CLI interface to the ReMarkable e-ink tablet API
+remcurl \- CLI interface to the ReMarkable e-ink tablet
 
 .SH SYNOPSIS
 
@@ -21,8 +21,8 @@ remcurl \- CLI interface to the ReMarkable e-ink tablet API
 
 .SH DESCRIPTION
 
-remcurl interacts with the interface exposed by the ReMarkable e-ink tablet
-on
+remcurl interacts with the HTTP interface exposed by the ReMarkable e-ink
+tablet on
 .IR http://10.11.99.1/ \.
 It supports listing, download (including recursive download), and upload
 of files.
@@ -44,7 +44,7 @@ which is considered the top-level directory.
 .BI "remcurl json " remote_path
 Fetches the information about the file or directory located at
 .IR remote_path ,
-in JSON format as exposed by the ReMarkable API.
+in JSON format as exposed by the ReMarkable interface.
 .TP
 .BI "remcurl get " remote_path
 Downloads the file located at
@@ -66,7 +66,7 @@ Uploads the file located at
 .I local_path
 to the ReMarkable. Supported are PDF and EPUB files.
 .br
-Note that the API seems to only include support for uploading into the
+Note that the interface seems to only include support for uploading into the
 top-level directory of the ReMarkable file system, not for uploading into
 subdirectories.
 .TP
