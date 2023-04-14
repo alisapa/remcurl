@@ -1,4 +1,4 @@
-# remcurl --- CLI interface to the ReMarkable e-ink tablet
+# remcurl — CLI interface to the ReMarkable e-ink tablet
 
 `remcurl` interacts with the HTTP interface exposed by the ReMarkable e-ink
 tablet on `http://10.11.99.1/`. It supports listing, download (including
