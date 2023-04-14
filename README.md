@@ -42,7 +42,7 @@ Be careful to specify the same prefix that was used for installing.
 See the manpage, available in this repository as `man/remcurl.1`. It can be
 viewed as follows:
 ```sh
-groff -Tascii man/remcurl.1 # output as text
-groff -Tps man/remcurl.1    # output as PostScript
+groff -Tascii -man man/remcurl.1 # output as text
+groff -Tps -man man/remcurl.1    # output as PostScript
 man man/remcurl.1           # view with man pager
 ```
