@@ -44,5 +44,5 @@ viewed as follows:
 ```sh
 groff -Tascii -man man/remcurl.1 # output as text
 groff -Tps -man man/remcurl.1    # output as PostScript
-man man/remcurl.1           # view with man pager
+man man/remcurl.1                # view with man pager
 ```
