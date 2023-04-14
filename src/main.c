@@ -25,7 +25,9 @@ const char *usage = \
 "%1$s put <local_path>\n"
 "\tUpload a file to the ReMarkable.\n"
 "%1$s help\n"
-"\tPrint this help message.\n";
+"\tPrint this help message.\n"
+"\n"
+"See man remcurl(1) for more information.\n";
 
 // Not a typo! Or rather, the Remarkable developers' typo...
 const char *name_attr      = "VissibleName";

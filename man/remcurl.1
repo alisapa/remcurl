@@ -1,0 +1,79 @@
+.TH REMCURL 1 2023-04-14
+
+.SH NAME
+remcurl \- CLI interface to the ReMarkable e-ink tablet API
+
+.SH SYNOPSIS
+
+.B remcurl ls
+.I remote_path
+.br
+.B remcurl json
+.I remote_path
+.br
+.B remcurl get
+.I remote_path
+.br
+.B remcurl put
+.I local_path
+.br
+.B remcurl help
+
+.SH DESCRIPTION
+
+remcurl interacts with the interface exposed by the ReMarkable e-ink tablet
+on
+.IR http://10.11.99.1/ \.
+It supports listing, download (including recursive download), and upload
+of files.
+
+If no argument has been given, it defaults to listing the files of the
+top-level directory of the ReMarkable's storage.
+
+.SH USAGE
+.TP
+.BI "remcurl ls " remote_path
+Lists files inside the directory
+.IR remote_path ,
+one file per line. Directory names are followed by a
+.I /
+to distinguish them from files. If no remote path is given, it defaults to
+.IR \(dq\(dq ,
+which is considered the top-level directory.
+.TP
+.BI "remcurl json " remote_path
+Fetches the information about the file or directory located at
+.IR remote_path ,
+in JSON format as exposed by the ReMarkable API.
+.TP
+.BI "remcurl get " remote_path
+Downloads the file located at
+.I remote_path
+as a PDF, into a local file with the same name and the extension
+.IR .pdf .
+.br
+If
+.I remote_path
+is a directory, remcurl will recursively download all files and directories
+contained in that directory. The remote directory names are used as the local
+directory names, except for the top-level directory
+.IR \(dq\(dq ,
+which is saved as
+.IR fs_root .
+.TP
+.BI "remcurl put " local_path
+Uploads the file located at
+.I local_path
+to the ReMarkable. Supported are PDF and EPUB files.
+.br
+Note that the API seems to only include support for uploading into the
+top-level directory of the ReMarkable file system, not for uploading into
+subdirectories.
+.TP
+.B remcurl help
+Prints a help message and exits with success.
+
+.SH EXIT STATUS
+Returns 0 upon success, 1 upon failure.
+.I stderr
+will usually have further information about the reason for the failure.
