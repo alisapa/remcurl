@@ -8,6 +8,11 @@ Note that this tool hasn't been tested nearly enough and probably will fail
 on a lot of edge cases. It's not even good code, probably.  But it works well
 enough to fulfill its purpose.
 
+Connect the ReMarkable to the computer with the cable *before* invoking this
+program, and wait a few seconds to let the ReMarkable start up its
+web interface. Otherwise, the program will be stuck waiting for a response
+indefinitely.
+
 ## Dependencies
 
 - [libcurl](https://curl.se): for sending HTTP requests
