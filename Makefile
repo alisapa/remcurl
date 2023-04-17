@@ -25,10 +25,8 @@ INSTALL_MAN=$(INSTALL_PREFIX)/share/man
 remcurl: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
-
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(DEPS)
+	@mkdir -p $(OBJDIR)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: clean
