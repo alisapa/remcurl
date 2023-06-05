@@ -20,7 +20,7 @@ OBJS=$(patsubst %,$(OBJDIR)/%,$(_OBJS))
 
 INSTALL_PREFIX=/usr/local
 INSTALL_BIN=$(INSTALL_PREFIX)/bin
-INSTALL_MAN=$(INSTALL_PREFIX)/share/man
+INSTALL_MAN=$(INSTALL_PREFIX)/share/man/man1
 
 remcurl: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
@@ -39,7 +39,7 @@ install:
 	mkdir -p $(INSTALL_BIN)
 	cp remcurl $(INSTALL_BIN)/remcurl
 	mkdir -p $(INSTALL_MAN)
-	cp man/remcurl.1 $(INSTALL_MAN)/remcurl
+	cp man/remcurl.1 $(INSTALL_MAN)/remcurl.1
 .PHONY: uninstall
 uninstall:
 	rm -f $(INSTALL_BIN)/remcurl
